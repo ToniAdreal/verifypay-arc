@@ -1,0 +1,33 @@
+{
+  "_source": "https://docs.arc.io/arc/references/connect-to-arc.md and https://docs.arc.io/arc/references/contract-addresses.md (fetched 2026-10-21; RPCs answered eth_chainId 0x13b2 / 0x4cef52)",
+  "arcMainnet": {
+    "chainId": 5042,
+    "chainIdHex": "0x13b2",
+    "name": "Arc",
+    "rpcUrl": "https://rpc.mainnet.arc.io",
+    "explorer": "https://explorer.arc.io",
+    "nativeCurrency": { "name": "USDC", "symbol": "USDC", "decimals": 18 },
+    "usdc": "0x3600000000000000000000000000000000000000",
+    "usdcDecimals": 6
+  },
+  "arcTestnet": {
+    "chainId": 5042002,
+    "chainIdHex": "0x4cef52",
+    "name": "Arc Testnet",
+    "rpcUrl": "https://rpc.testnet.arc.io",
+    "explorer": "https://explorer.testnet.arc.io",
+    "nativeCurrency": { "name": "USDC", "symbol": "USDC", "decimals": 18 },
+    "usdc": "0x3600000000000000000000000000000000000000",
+    "usdcDecimals": 6
+  },
+  "local": {
+    "chainId": 5042002,
+    "chainIdHex": "0x4cef52",
+    "name": "Local arc-anvil fork of Arc Testnet",
+    "rpcUrl": "http://127.0.0.1:8545",
+    "explorer": "",
+    "nativeCurrency": { "name": "USDC", "symbol": "USDC", "decimals": 18 },
+    "usdc": "0x3600000000000000000000000000000000000000",
+    "usdcDecimals": 6
+  }
+}

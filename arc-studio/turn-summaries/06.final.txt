@@ -1,0 +1,25 @@
+Reading the contracts skill first. Good. Mode 1 is correct here. The tests just passed with the fresh source so the artifact is current, but the deploy_contract tool has a freshness gate so I'll run forge build first anyway, then deploy. Build succeeded (only the expected `block.timestamp` warnings, zero errors). The artifact is fresh. Deploying now. Deployed. Now update the frontend's default address and AGENTS.md simultaneously: Now update `ContractBar.tsx` with the new address, and update `AGENTS.md`: Everything is live and clean. Here's the full summary:
+
+---
+
+**New deployment**
+
+| | |
+|---|---|
+| Address | `0x82842c7df122d8d4a5e37f0e46404e42a251f6ee` |
+| Tx hash | `0x7c2480f292eabc7d1eec30348cbb66287e78ae9e6fd0c572e6dee3ee3ac5bc3a` |
+| Explorer | [Address](https://explorer.testnet.arc.io/address/0x82842c7df122d8d4a5e37f0e46404e42a251f6ee) · [Tx](https://explorer.testnet.arc.io/tx/0x7c2480f292eabc7d1eec30348cbb66287e78ae9e6fd0c572e6dee3ee3ac5bc3a) |
+| Chain | Arc Testnet |
+| Constructor | `USDC = 0x3600000000000000000000000000000000000000` |
+
+**Test suite: 32/32 passed** (3 fuzz × 256 runs each, 29 unit tests)
+
+New tests added this session: `test_release_highS_malleability`, `test_release_lowS_accepted`, `test_create_deadlineTooSoon_exactlyNowPlusMinuteMinusOne`, `test_create_deadlineExactlyAtMinimum_succeeds`, `testFuzz_fundsConserved_minDeadline`.
+
+**What changed vs v1:**
+- High-s malleable signatures → `InvalidAttestation` in `release()`
+- Deadlines under 60 seconds from now → `DeadlineTooSoon`
+- Frontend "Testnet" reset button now points to the new address
+- `AGENTS.md` records both deployments (v1 marked stale)
+
+Want to share this app? You can deploy it for free to **Netlify** or **Hugging Face** or **Vercel**. To get started, open the **Integrations** menu in the workbench header (or the **+** menu in the chat toolbar) and choose **Connect Netlify** or **Connect Hugging Face** or **Connect Vercel** to connect your account. Once connected, just say "deploy this" and I'll handle the rest.

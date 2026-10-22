@@ -1,0 +1,8 @@
+Build a single-page Vite app (vanilla JS or React, your choice; keep it small) for VerifyPayEscrow:
+- Connect any EIP-1193 browser wallet; switch to Arc (wallet_switchEthereumChain, falling back to wallet_addEthereumChain) with a selector for Arc Testnet (chainId 5042002, https://rpc.testnet.arc.io, explorer https://explorer.testnet.arc.io) and Arc Mainnet (chainId 5042, https://rpc.mainnet.arc.io, explorer https://explorer.arc.io); native currency USDC with 18 decimals.
+- Contract address field (prefilled with the testnet deployment) and a "deploy new contract from my wallet" button.
+- Payer panel: payee, verifier, amount (USDC, 6 decimals), deadline in minutes, work spec text -> keccak256 as workSpecHash; approve then createEscrow.
+- Verifier panel: escrow id + deliverable hash, OR paste a VerifyGate evidence JSON (only if verdict == "PASS", use 0x + record_hash); sign EIP-712 Pass with eth_signTypedData_v4; show the signature.
+- Release panel (anyone): id + hash + signature -> release (do a staticCall first and show decoded custom errors). Refund button for the payer.
+- Table of escrows (status, amounts, deadline) and an activity log with explorer links.
+- Always set maxFeePerGas >= 20 gwei (Arc mempool floor).

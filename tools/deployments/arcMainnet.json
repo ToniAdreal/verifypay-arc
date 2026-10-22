@@ -1,0 +1,11 @@
+{
+  "contract": "VerifyPayEscrow",
+  "address": "0x3622FfDCFE88c542aB1203a00282e128159edDE7",
+  "txHash": "0x17d7c9eb7d232c014473516b1a66d5c59318daa00ea1afcd902c51eedd6b1590",
+  "block": 27230255,
+  "deployer": "0x5A811B28fD21de8Fd413fF0acf610fF31d6352FB",
+  "usdc": "0x3600000000000000000000000000000000000000",
+  "chainId": 5042,
+  "deployedAt": "2026-10-22T05:01:16.867Z",
+  "artifact": "artifacts/VerifyPayEscrow.arcstudio.json"
+}

@@ -1,0 +1,20 @@
+# Arc Studio session log (VerifyPay)
+Session name: verifypay (arc-studio CLI v1.2.1, account toniadreal11@gmail.com)
+| # | Time (PDT) | Prompt file / text | Status | Notes |
+|---|---|---|---|---|
+| 01 | 2026-10-21 21:37 | `prompts/01-contract.txt` | completed | files: contracts/VerifyPayEscrow.sol; Arc Studio ran its own functional+security review and Slither (2 timestamp hits) thread 201d6ab3-d06a-4971-8db5-72841ff12b6b |
+| 02 | 2026-10-21 21:38 | `prompts/02-tests.txt` | completed | files: contracts/test-helpers/MockERC20.sol, contracts/test/VerifyPayEscrow.t.sol  thread 201d6ab3-d06a-4971-8db5-72841ff12b6b |
+| 02b | 2026-10-21 21:41 | `prompts/02b-constructor-fix.txt` (fix after our reference suite failed to compile: hard-coded USDC, no ctor arg) | completed | Arc Studio: immutable usdc ctor + nonReentrant create; its suite 27/27 |
+| 03 | 2026-10-21 21:43 | `prompts/03-deploy-testnet.txt` | needs_input | Arc Studio deployed VerifyPayEscrow to Arc Testnet 0x019f2212cc5b91d18f51816814b027afa4918582 (tx 0x2a074e0f…), dripped faucet USDC to its sandbox deployer, then asked to create a Circle Standard Developer API key → we answered **Deny** (not authorized) |
+| 03b | 2026-10-21 21:45 | `prompts/03b-flow-without-api-key.txt` (+ answer Deny to the API-key question) | completed (blocked) | Arc Studio generated sandbox payer 0x92607EdA480f717434fdD4588B1361Bc9517Dc51 + verifier 0x50034de9E518DcF602Ce2Bc22A90F88Cb1D4a2D6; faucet_drip refused: 'requires DEVELOPER_ADMIN_DEFAULT_ROLE'; platform deployer key is Circle-managed |
+| 04 | 2026-10-21 21:49 | `prompts/04-frontend.txt` | completed | Arc Studio built the React/Vite app (ConnectKit; panels Payer/Verifier/Release+Refund, escrow table, activity log), prefilled with testnet contract; 'deploy from my wallet' became instructions only |
+| 05 | 2026-10-21 21:58 | `prompts/05-hardening.txt` | completed | Arc Studio audit: [M-1] explicit high-s rejection in release, [M-2] MIN_DEADLINE_SECS=60 + DeadlineTooSoon; frontend zero-address/balance/65-byte-sig guards; docs/security-review.md; its suite 32/32 |
+| 06 | 2026-10-21 22:00 | `prompts/06-redeploy-testnet.txt` | completed | files: AGENTS.md, contracts/contract-metadata/VerifyPayEscrow.json, src/components/ContractBar.tsx | deployments: {'contract': 'VerifyPayEscrow', 'address': '0x82842c7df122d8d4a5e37f0e46404e42a251f6ee', 'network': 'Arc Testnet', 'explorerUrl': 'https://explorer.testnet.arc.io/address/0x82842c7df122d8d4a5e37f0e46404e42a251f6ee', 'txHash': '0x7c2480f292eabc7d1eec30348cbb66287e78ae9e6fd0c572e6dee3ee3ac5bc3a', 'dep thread 201d6ab3-d06a-4971-8db5-72841ff12b6b |
+| 07 | 2026-10-21 22:04 | `prompts/07-mainnet-address-and-fees.txt` | completed | files: AGENTS.md, src/App.tsx, src/components/ContractBar.tsx, src/components/PayerPanel.tsx, src/components/ReleasePanel.tsx, src/hooks/useDynamicFees.ts | deployments: {'contract': 'VerifyPayEscrow', 'address': '0x82842c7df122d8d4a5e37f0e46404e42a251f6ee', 'network': 'Arc Testnet', 'explorerUrl': 'https://explorer.testnet.arc.io/address/0x82842c7df122d8d4a5e37f0e46404e42a251f6ee', 'txHash': '0x7c2480f292eabc7d1eec30348cbb66287e78ae9e6fd0c572e6dee3ee3ac5bc3a', 'dep thread 201d6ab3-d06a-4971-8db5-72841ff12b6b |
+
+## Off-Arc-Studio steps (box, for verification and mainnet only)
+- 21:42 PDT: our 26-test reference suite vs Arc Studio v01 → compile failure (`test-logs/reference-suite-vs-arcstudio-01-compile.txt`) → prompt 02b.
+- 21:43: reference suite vs v02b → 26/26; ArcFork real-USDC fork test passes on testnet + mainnet forks.
+- 22:00: reference suite vs v05 (hardened) → 24/26, the 2 fuzz failures are the new 60 s minimum deadline; with fuzz bounds ≥60 s (crosscheck copy) → 26/26 (`test-logs/reference-suite-vs-arcstudio-05-adjusted.txt`).
+- 22:01: Arc Studio's compiled artifact deployed to Arc Mainnet from PAYER → 0x3622FfDCFE88c542aB1203a00282e128159edDE7 (tx 0x17d7c9eb…). Runtime bytecode == Arc Studio testnet deployment 0x82842c7d… except EIP-712 immutables.
+- 22:01–22:03: mainnet demo (escrow #1 release on PASS, #2 refund, sweep back), recorded as video segment 03.

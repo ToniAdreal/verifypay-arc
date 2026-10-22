@@ -1,0 +1,29 @@
+Reading the contracts skill before writing. Writing the contract now, with a balanced security review to follow.Contract written. Now reading the contract before dispatching the review. Contract looks solid. Dispatching both reviewers now.Functional check complete.Security audit complete. Both reviewers came back clean. Running Slither now. Slither found only two `timestamp` detector hits — both Low/Informational and entirely expected for a deadline-based escrow. There are no High or Medium findings. The `block.timestamp` usage here is correct by design: deadline comparisons on USDC escrow contracts are standard practice, and Arc's sub-second finality makes timestamp manipulation a non-issue in practice. `VerifyPayEscrow.sol` is written, reviewed, and clean. Here's a summary of what was built and what the review found:
+
+---
+
+**`contracts/VerifyPayEscrow.sol`** — 174 lines, Solidity ^0.8.24, no deploy yet.
+
+**Architecture**
+- Inherits `EIP712("VerifyPay","1")` + `ReentrancyGuard`; uses `SafeERC20` + `SignatureChecker` (ERC-1271 compatible).
+- USDC constant `0x3600000000000000000000000000000000000000`; no `receive`/`fallback`, no `msg.value` anywhere.
+- State machine `None(0) → Open(1) → Released(2) | Refunded(3)` enforced by a single `status` field per escrow.
+- IDs start at 1 (`nextEscrowId = 1`), incrementing pre-assign.
+
+**Key design points**
+- `createEscrow`: pulls USDC via `safeTransferFrom` after writing storage (checks-effects-interactions).
+- `release`: callable by anyone; verifies an EIP-712 `Pass(escrowId, deliverableHash)` signature from the escrow's designated verifier; deadline is intentionally not checked here — the payer's refund window and the verifier's release window are orthogonal.
+- `refund`: payer-only, deadline must have passed, status must still be Open; sets Refunded before transferring (CEI).
+- `passDigest(id, deliverableHash)` is a public view so off-chain agents can construct the exact bytes to sign without guessing the domain separator.
+
+**Review results**
+- Security review: no findings from either pass (rule corpus + functional/adversarial reasoning).
+- Slither: two Low/Informational `timestamp` hits on the deadline comparisons — expected and correct for any deadline-gated contract; no High or Medium findings.
+
+No changes were needed. Ready to deploy whenever you say the word.
+
+## Audit Provenance
+| Subagent | Dispatched | Files audited | Corpus rules cited |
+|---|---|---|---|
+| solidity-auditor | yes | 1 | none |
+| functional-auditor | yes | 1 | — |

@@ -1,0 +1,23 @@
+Reading the relevant files before editing. Good. Now I have the full picture. Planning all the work: Writing the dynamic gas hook and updating all affected files in parallel: Now rewrite App.tsx with URL params + chain-aware address defaulting: Now update ContractBar to accept `chainId` and show the right default per chain: Now wire `useDynamicFees` into PayerPanel and ReleasePanel, removing the hardcoded `MIN_FEE`: Now add `useDynamicFees` call inside the component and replace all `MIN_FEE` references: Replace `maxFeePerGas: MIN_FEE` with the dynamic fees in both `approve` and `create` calls: Also fix the chainId narrowing — the old `const arcId = chainId as 5042002 | 5042` pattern is now just `chainId` after removing the type cast. Let me also tidy the PayerPanel `handleApprove` to not cast chainId: Good — the intermediate `arcId = chainId` is harmless, wagmi accepts `number` there. Now update ReleasePanel the same way: Now replace both `MIN_FEE` usages in ReleasePanel: Now update AGENTS.md with the mainnet deployment: Fix: use a controlled pattern — `addrInput` becomes derived (show the prop) and an explicit override tracks user edits: Zero errors. Check forge tests: 32/32. Dev server still running: **32/32 tests pass. Zero lint/typecheck errors. Contract source unchanged.**
+
+Here's what changed:
+
+**1. Chain-aware contract addresses**
+
+`CHAIN_DEFAULTS` in `App.tsx` maps chain ID → canonical address. The effective address is `contractOverride ?? CHAIN_DEFAULTS[chainId]`. When the user switches chains and was showing a known default for the old chain, it clears automatically. The "Testnet default" / "Mainnet default" reset button in `ContractBar` always targets whichever chain is active.
+
+**URL params:** `?net=arcMainnet` or `?net=arcTestnet` triggers a `switchChain` on mount. `?contract=0x…` pre-fills the address override. Both params stack: `?net=arcMainnet&contract=0xabc…` selects mainnet and pins that address.
+
+**2. Mainnet warning badge**
+
+When `chainId === 5042`: a full-width amber banner above the header reads "MAINNET — real USDC — Transactions on this network use real funds and are irreversible." A smaller pulsing "Mainnet" badge also appears inline in the app title.
+
+**3. Dynamic gas pricing (`src/hooks/useDynamicFees.ts`)**
+
+Polls `eth_getBlockByNumber("latest")` every 4 seconds and computes:
+- `maxFeePerGas = max(2 × baseFeePerGas, 20 gwei) + 1 gwei`
+- `maxPriorityFeePerGas = 1 gwei`
+
+Falls back to `{21 gwei, 1 gwei}` until the first RPC reply arrives or on transient errors. All four write calls — `approve`, `createEscrow`, `release`, `refund` — now use these live values instead of the hardcoded 20 gwei constant.
+
+Want to share this app? You can deploy it for free to **Netlify** or **Hugging Face** or **Vercel**. To get started, open the **Integrations** menu in the workbench header (or the **+** menu in the chat toolbar) and choose **Connect Netlify** or **Connect Hugging Face** or **Connect Vercel** to connect your account. Once connected, just say "deploy this" and I'll handle the rest.

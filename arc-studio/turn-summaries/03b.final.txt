@@ -1,0 +1,48 @@
+Reading the self-deploy skill and checking what's available in the sandbox. Good. I don't need Circle DCW wallets for this — the approach is to write a TypeScript script that uses `cast` (Foundry's CLI) and the RPC proxy directly, with the deployer wallet's private key. But the platform deployer wallet's key is NOT exposed — it's Circle-managed. Let me check what tooling is available and whether cast is present, then figure out what key I actually have access to. No private key is available in the sandbox environment — the platform deployer wallet is fully Circle-managed and its key is never exposed. `cast` is present, but there's no signing key to use with it. Let me think through exactly what I have:
+
+- The deployed contract address: `0x019f2212cc5b91d18f51816814b027afa4918582`
+- `cast` — can sign and send transactions, but needs a private key
+- The RPC proxy — available via env vars for RPC calls
+- The platform deployer wallet (`deployerWalletId: 3c2464b2-...`) — Circle-managed, key NOT exposed
+
+Let me check if there's any private key material at all in the environment, and probe the RPC proxy setup: Good — `Arc_Testnet` is in the RPC proxy chains. Now build the RPC URL and check what's available for signing. The platform deployer wallet's key is not in the environment. I need to generate a fresh keypair with `cast wallet new`, use it as both payer and verifier, faucet-drip USDC to it, then drive all four transactions from it.
+
+Let me write a single self-contained Bun script that does everything:
+1. Generates a payer keypair and a verifier keypair
+2. Faucet-drips the payer
+3. Runs the full flow using `cast send` / `cast call` RPC is live. Now generate wallets and write the flow script: Good — payer is `0x92607EdA480f717434fdD4588B1361Bc9517Dc51`, verifier is `0x50034de9E518DcF602Ce2Bc22A90F88Cb1D4a2D6`. The payee can be the verifier address (it just needs to receive USDC). Now drip USDC to the payer: Faucet blocked — the account doesn't have `DEVELOPER_ADMIN_DEFAULT_ROLE`. Let me check whether the contract itself has any USDC already (the deploy tx sent no USDC, but let me verify the payer balance via RPC too), and try the Arc public faucet endpoint directly: Payer has 0 USDC. The `faucet_drip` tool requires `DEVELOPER_ADMIN_DEFAULT_ROLE` which isn't on this account. Here is exactly what's blocked and why, as you asked me to report:
+
+---
+
+**Blocked: faucet funding.**
+
+The `faucet_drip` tool returned:
+
+```
+"Faucet drip requires the DEVELOPER_ADMIN_DEFAULT_ROLE on at least one available entity for this user."
+```
+
+This is the Circle faucet's permission gate — it requires the Arc Studio account to have `DEVELOPER_ADMIN_DEFAULT_ROLE` on a Circle entity, which this session does not. The same gate would apply to the Circle SDK's `walletsClient.requestTestnetTokens` call. The platform deployer wallet that signed the deploy transaction is Circle-managed and its private key is not exposed to the sandbox, so it cannot be used directly with `cast send` either.
+
+**What would unblock it — two paths:**
+
+1. **You fund the payer address manually.** Send any amount of USDC (at least 1 USDC = 1,000,000 raw units) to this freshly generated payer address on Arc Testnet. The address needs USDC for the approve + createEscrow calls, and also to pay gas (on Arc, USDC is the gas token):
+
+   **Payer address:** `0x92607EdA480f717434fdD4588B1361Bc9517Dc51`
+
+   You can use Arc Studio's "Get test USDC" button in the sidebar to drip USDC to your connected wallet, then send from there, or use https://faucet.circle.com directly. Once the payer address has USDC, tell me and I'll immediately run all four transactions using the keys I already generated.
+
+2. **You enable `DEVELOPER_ADMIN_DEFAULT_ROLE`** on your Circle account (via the Circle Console), which will let the `faucet_drip` tool work in future sessions without manual transfers.
+
+**What's already done and ready:**
+
+| Item | Value |
+|---|---|
+| Contract | `0x019f2212cc5b91d18f51816814b027afa4918582` |
+| Payer key | generated (`0x92607...Dc51`) |
+| Verifier key | generated (`0x50034...a2D6`) |
+| Payee | `0x50034de9E518DcF602Ce2Bc22A90F88Cb1D4a2D6` (= verifier address) |
+| RPC | live, Arc Testnet block 68,465,297 |
+| `cast` | installed, ready to sign and send |
+
+The moment you confirm USDC is on `0x92607EdA480f717434fdD4588B1361Bc9517Dc51`, I'll run approve → createEscrow → passDigest sign → release and report every tx hash with explorer links.

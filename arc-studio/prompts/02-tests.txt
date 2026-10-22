@@ -1,0 +1,13 @@
+Write a Foundry test suite for VerifyPayEscrow using a 6-decimal mock USDC, and run it until it passes. Cover at least:
+1 happy path: create -> verifier signs PASS (vm.sign over passDigest) -> a third-party relayer calls release -> payee receives USDC, events emitted, status Released.
+2 wrong signer (attacker key, and the payee's own key) -> InvalidAttestation.
+3 signature for a different deliverableHash -> InvalidAttestation.
+4 replay: PASS for escrow 1 reused on escrow 2; reused on a second VerifyPayEscrow deployment with the same id; reused after vm.chainId change -> all InvalidAttestation.
+5 double release -> NotOpen; release after refund -> NotOpen; refund after release -> NotOpen; double refund -> NotOpen.
+6 refund timing: at or before deadline -> DeadlineNotReached; after deadline -> funds back; non-payer refund -> NotPayer.
+7 create param validation and missing allowance.
+8 reentrancy: a malicious token re-entering release during transfer -> ReentrancyGuardReentrantCall.
+9 ERC-1271 smart-account verifier works.
+10 passDigest equals a manually computed EIP-712 digest (so viem/ethers signTypedData matches).
+11 fuzz: funds are conserved for random amounts/deadlines; refund never succeeds before the deadline.
+Show me the full test output.

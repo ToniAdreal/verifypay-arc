@@ -1,0 +1,1 @@
+Audit VerifyPayEscrow and the frontend for Arc-specific issues (USDC 6 vs 18 decimals, address(0) sends, blocklisted payee, 20 gwei fee floor, non-strictly-increasing timestamps) and general escrow risks (signature malleability, replay, reentrancy, griefing). Fix real issues, re-run all tests, and summarize what changed.

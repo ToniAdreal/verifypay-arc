@@ -1,0 +1,11 @@
+Build a Solidity 0.8.24+ contract `VerifyPayEscrow` for Arc (use Arc's USDC ERC-20 interface at 0x3600000000000000000000000000000000000000, 6 decimals; never use msg.value).
+Purpose: a USDC escrow that pays an AI coding agent only when a designated verifier signs a PASS attestation for the delivered work.
+Requirements:
+- OpenZeppelin v5: SafeERC20, ReentrancyGuard, EIP712 (name "VerifyPay", version "1"), SignatureChecker (so ERC-1271 smart-account verifiers work too).
+- createEscrow(address payee, address verifier, uint256 amount, uint64 deadline, bytes32 workSpecHash) returns (uint256 escrowId): ids start at 1; pulls `amount` USDC from msg.sender with safeTransferFrom; reverts on zero payee/verifier (Arc reverts value sends to address(0)), zero amount, deadline <= block.timestamp.
+- release(uint256 escrowId, bytes32 deliverableHash, bytes signature): callable by anyone; requires status Open and a valid EIP-712 signature by the escrow's verifier over typed struct Pass(uint256 escrowId, bytes32 deliverableHash); sets status Released, stores deliverableHash, pays payee. Still allowed after the deadline as long as the payer has not refunded.
+- refund(uint256 escrowId): only payer, only when block.timestamp > deadline and status Open; sets Refunded and returns USDC.
+- Single-settle state machine None -> Open -> Released | Refunded; checks-effects-interactions; custom errors (ZeroAddress, ZeroAmount, DeadlineInPast, NotOpen(id), InvalidAttestation, NotPayer, DeadlineNotReached(deadline)).
+- Events: EscrowCreated(id indexed, payer indexed, payee indexed, verifier, amount, deadline, workSpecHash), Released(id indexed, payee indexed, amount, deliverableHash, relayer), Refunded(id indexed, payer indexed, amount).
+- Views: getEscrow(id) returning the struct, passDigest(id, deliverableHash), domainSeparator(), PASS_TYPEHASH, nextEscrowId.
+Keep it compact and well-commented. Do not deploy yet.

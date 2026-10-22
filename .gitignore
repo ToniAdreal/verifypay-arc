@@ -1,0 +1,19 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.env
+!*.env.example
+.wallet.env
+tools/.wallet.env
+# build / deps
+node_modules/
+dist/
+contracts/out/
+contracts/cache/
+cache/
+.arc-studio/
+tools/deployments/local*
+# media
+*.mkv
+*.mp4

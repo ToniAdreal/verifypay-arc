@@ -1,0 +1,4 @@
+Two frontend follow-ups:
+1. Your exact VerifyPayEscrow bytecode (built in this workspace) is now also deployed on Arc Mainnet (chain 5042) at 0x3622FfDCFE88c542aB1203a00282e128159edDE7 (deploy tx 0x17d7c9eb7d232c014473516b1a66d5c59318daa00ea1afcd902c51eedd6b1590). Make the contract address default per selected chain: testnet -> 0x82842c7df122d8d4a5e37f0e46404e42a251f6ee, mainnet -> 0x3622FfDCFE88c542aB1203a00282e128159edDE7, and support URL params ?net=arcMainnet|arcTestnet&contract=0x... to preselect. Show a clear "MAINNET — real USDC" badge when mainnet is selected.
+2. Fees: maxFeePerGas is currently hard-coded to exactly 20 gwei, which can stall when the base fee rises above 20 gwei. Use maxFeePerGas = max(2 * latest baseFee, 20 gwei) + 1 gwei tip, maxPriorityFeePerGas = 1 gwei, for every write (approve, createEscrow, release, refund).
+Run lint/typecheck and the contract tests again (contract must not change) and summarize.

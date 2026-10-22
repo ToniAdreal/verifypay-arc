@@ -1,0 +1,50 @@
+Reading the current contract and test file before changing anything. Good — I have both files in full. Three changes to make to the contract (immutable `usdc`, constructor arg + zero check, `nonReentrant` on `createEscrow`) and two changes to the test file (remove `vm.etch` wiring, pass mock to constructor, add `test_constructor_zeroUsdc`). Applying all edits now. Now replace the two `IERC20(USDC).safe*` calls to use the `usdc` immutable: Contract is done. Now update the test file — remove the `USDC_ADDR` constant + `vm.etch` wiring, pass the mock to the constructor everywhere, and add the zero-usdc constructor test. Now fix the reentrancy test — it still uses `vm.etch` and `new VerifyPayEscrow()`. That test needs its own mock wiring, but now the constructor takes a token arg, so `new VerifyPayEscrow()` there must become `new VerifyPayEscrow(IERC20(address(mal)))`. Also replace the `MaliciousToken` base class reference since it needs the constructor signature change. That inline `import` is invalid inside a function body — I need to remove it and rely on the already-imported `IERC20` at the top of the file. Now add the `IERC20` import to the top of the test file (it isn't imported yet), and add the `test_constructor_zeroUsdc` test. Let me check the current imports first: `IERC20` isn't imported. Also fix the `test_replay_differentContract` test which still uses `new VerifyPayEscrow()`. Let me check that section and the end of the file: Now I have everything I need. Three more edits: (1) add `IERC20` import, (2) fix `new VerifyPayEscrow()` in the replay test, (3) add `test_constructor_zeroUsdc` before the closing brace. Now add `test_constructor_zeroUsdc` before the closing brace: All edits are in place. Running the suite now. The mock is typed as `MockERC20` but the constructor expects `IERC20`. Need to cast it at the call site. 27/27 passed, 0 failed, finished in 47 ms. Here's the full output:
+
+```
+Ran 27 tests for contracts/test/VerifyPayEscrow.t.sol:VerifyPayEscrowTest
+
+[PASS] testFuzz_fundsConserved(uint96,uint64)              (runs: 256, μ: 279144, ~: 279089)
+[PASS] testFuzz_refundNeverBeforeDeadline(uint64,uint64)   (runs: 256, μ: 225335, ~: 233400)
+[PASS] test_constructor_zeroUsdc()                         (gas:   82212)  ← NEW
+[PASS] test_create_deadlineExactlyNow()                    (gas:   51535)
+[PASS] test_create_deadlineInPast()                        (gas:   51658)
+[PASS] test_create_missingAllowance()                      (gas:  189319)
+[PASS] test_create_zeroAmount()                            (gas:   51203)
+[PASS] test_create_zeroPayee()                             (gas:   49024)
+[PASS] test_create_zeroVerifier()                          (gas:   49067)
+[PASS] test_doubleRefund()                                 (gas:  217183)
+[PASS] test_doubleRelease()                                (gas:  276507)
+[PASS] test_erc1271_verifier()                             (gas:  448653)
+[PASS] test_happyPath_createReleaseByRelayer()             (gas:  283899)
+[PASS] test_passDigest_matchesManual()                     (gas:    8473)
+[PASS] test_reentrancy_release()                           (gas: 2220662)
+[PASS] test_refundAfterRelease()                           (gas:  276493)
+[PASS] test_refund_afterDeadline()                         (gas:  220136)
+[PASS] test_refund_atDeadline()                            (gas:  231630)
+[PASS] test_refund_beforeDeadline()                        (gas:  231807)
+[PASS] test_refund_nonPayer()                              (gas:  232779)
+[PASS] test_releaseAfterRefund()                           (gas:  224024)
+[PASS] test_release_wrongDeliverableHash()                 (gas:  244611)
+[PASS] test_release_wrongSigner_attacker()                 (gas:  244672)
+[PASS] test_release_wrongSigner_payee()                    (gas:  244629)
+[PASS] test_replay_differentChainId()                      (gas:  486749)
+[PASS] test_replay_differentContract()                     (gas: 1503402)
+[PASS] test_replay_differentEscrowId()                     (gas:  424847)
+
+Suite result: ok. 27 passed; 0 failed; 0 skipped; finished in 47.56ms
+```
+
+Here's a summary of every change made:
+
+**`contracts/VerifyPayEscrow.sol`**
+- `address public constant USDC` replaced by `IERC20 public immutable usdc`
+- Constructor is now `constructor(IERC20 usdc_) EIP712("VerifyPay","1")` — reverts `ZeroAddress` if `address(usdc_) == address(0)`, then sets the immutable
+- `createEscrow` is now `external nonReentrant` (defense-in-depth for hooked tokens during `transferFrom`)
+- All three `IERC20(USDC).safe*` calls replaced with `usdc.safe*`; everything else (errors, events, struct fields, views) is unchanged
+
+**`contracts/test/VerifyPayEscrow.t.sol`**
+- Added `import {IERC20}` 
+- `setUp`: removed `USDC_ADDR` constant + `vm.etch`; now deploys `MockERC20` directly and passes `IERC20(address(usdc))` to the constructor
+- `test_replay_differentContract`: second instance now `new VerifyPayEscrow(IERC20(address(usdc)))`
+- `test_reentrancy_release`: removed the `vm.etch` path; deploys `MaliciousToken` directly and passes it as `IERC20(address(mal))` to `new VerifyPayEscrow(...)`
+- Added `test_constructor_zeroUsdc`: confirms `new VerifyPayEscrow(IERC20(address(0)))` reverts `ZeroAddress`

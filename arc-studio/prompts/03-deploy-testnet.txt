@@ -1,0 +1,1 @@
+Deploy VerifyPayEscrow to Arc testnet with constructor argument USDC = 0x3600000000000000000000000000000000000000. Then, on testnet, fund a test wallet from the faucet and run one full flow: approve 1 USDC, createEscrow with a 10-minute deadline, sign a PASS as the verifier, release. Report the contract address and every transaction hash with explorer links.

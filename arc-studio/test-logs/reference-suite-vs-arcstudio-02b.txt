@@ -1,0 +1,36 @@
+No files changed, compilation skipped
+
+Ran 1 test for test/ArcFork.t.sol:ArcForkTest
+[SKIP] test_fork_fullFlowOnRealUsdc() (gas: 0)
+Suite result: ok. 0 passed; 0 failed; 1 skipped; finished in 367.44µs (78.50µs CPU time)
+
+Ran 26 tests for test/VerifyPayEscrow.t.sol:VerifyPayEscrowTest
+[PASS] testFuzz_createRelease_conservesFunds(uint96,bytes32,uint32) (runs: 512, μ: 389291, ~: 389578)
+[PASS] testFuzz_refundNeverBeforeDeadline(uint32,uint32) (runs: 512, μ: 287514, ~: 278316)
+[PASS] test_constructor_rejectsZeroToken() (gas: 3833)
+[PASS] test_create_pullsUsdcAndEmits() (gas: 299089)
+[PASS] test_create_revertsOnBadParams() (gas: 137530)
+[PASS] test_create_revertsWithoutAllowance() (gas: 268249)
+[PASS] test_doubleRefund_reverts() (gas: 324499)
+[PASS] test_doubleRelease_reverts() (gas: 393628)
+[PASS] test_passDigest_matchesManualEip712() (gas: 12304)
+[PASS] test_reentrancy_onRelease_blocked() (gas: 1694563)
+[PASS] test_refund_afterDeadline_returnsFunds() (gas: 323819)
+[PASS] test_refund_afterRelease_reverts() (gas: 386461)
+[PASS] test_refund_beforeOrAtDeadline_reverts() (gas: 311884)
+[PASS] test_refund_onlyPayer() (gas: 272475)
+[PASS] test_release_afterRefund_reverts() (gas: 337778)
+[PASS] test_release_garbageSignature_reverts() (gas: 278448)
+[PASS] test_release_happyPath_anyoneCanRelay() (gas: 400788)
+[PASS] test_release_payerOrPayeeSignatureIsNotEnough() (gas: 290766)
+[PASS] test_release_signatureForOtherDeliverable_reverts() (gas: 294477)
+[PASS] test_release_smartAccountVerifier_erc1271() (gas: 592823)
+[PASS] test_release_stillAllowedAfterDeadlineIfNotRefunded() (gas: 359620)
+[PASS] test_release_unknownEscrow_reverts() (gas: 48431)
+[PASS] test_release_wrongSigner_reverts() (gas: 302204)
+[PASS] test_replay_acrossChains_reverts() (gas: 295151)
+[PASS] test_replay_acrossContracts_reverts() (gas: 574071)
+[PASS] test_replay_sameSigOnOtherEscrow_reverts() (gas: 628542)
+Suite result: ok. 26 passed; 0 failed; 0 skipped; finished in 29.63ms (51.25ms CPU time)
+
+Ran 2 test suites in 30.37ms (29.99ms CPU time): 26 tests passed, 0 failed, 1 skipped (27 total tests)

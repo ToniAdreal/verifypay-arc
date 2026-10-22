@@ -1,0 +1,26 @@
+{
+  "domain": {
+    "name": "VerifyPay",
+    "version": "1",
+    "chainId": 5042,
+    "verifyingContract": "0x3622FfDCFE88c542aB1203a00282e128159edDE7"
+  },
+  "types": {
+    "Pass": [
+      {
+        "name": "escrowId",
+        "type": "uint256"
+      },
+      {
+        "name": "deliverableHash",
+        "type": "bytes32"
+      }
+    ]
+  },
+  "value": {
+    "escrowId": "1",
+    "deliverableHash": "0x3e199bb6733d889041b2eae3d67e5f7e7a83b4dea95907df5c955c109fd94747"
+  },
+  "signer": "0x4F2F24BF7C0c090096dF61BEbACf7ba82d8fb7e1",
+  "signature": "0xfb4f6824ce7d8a0a1c4189802a26d3942bbc255895db9adbae089aaf9fc71235377e4f1040813f69f6ea19245b48c32a3ad4173d67611bc3f51784ca08d80be61b"
+}

@@ -1,0 +1,32 @@
+Compiling 49 files with Solc 0.8.30
+Solc 0.8.30 finished in 426.80ms
+Error: Compiler run failed:
+Error (6160): Wrong argument count for function call: 1 arguments given but expected 0.
+  --> test/ArcFork.t.sol:25:34:
+   |
+25 |         VerifyPayEscrow escrow = new VerifyPayEscrow(usdc);
+   |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Error (6160): Wrong argument count for function call: 1 arguments given but expected 0.
+  --> test/VerifyPayEscrow.t.sol:44:18:
+   |
+44 |         escrow = new VerifyPayEscrow(IERC20(address(usdc)));
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Error (6160): Wrong argument count for function call: 1 arguments given but expected 0.
+   --> test/VerifyPayEscrow.t.sol:112:9:
+    |
+112 |         new VerifyPayEscrow(IERC20(address(0)));
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Error (6160): Wrong argument count for function call: 1 arguments given but expected 0.
+   --> test/VerifyPayEscrow.t.sol:193:33:
+    |
+193 |         VerifyPayEscrow other = new VerifyPayEscrow(IERC20(address(usdc)));
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Error (6160): Wrong argument count for function call: 1 arguments given but expected 0.
+   --> test/VerifyPayEscrow.t.sol:298:30:
+    |
+298 |         VerifyPayEscrow e2 = new VerifyPayEscrow(IERC20(address(evil)));
+    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

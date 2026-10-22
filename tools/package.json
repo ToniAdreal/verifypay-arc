@@ -1,0 +1,14 @@
+{
+  "name": "verifypay-arc-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Box-side ethers scripts: deploy the Arc Studio-built VerifyPayEscrow and run the end-to-end demo on Arc",
+  "scripts": {
+    "balances": "node scripts/balances.mjs",
+    "deploy": "node scripts/deploy.mjs",
+    "demo": "node scripts/demo.mjs",
+    "sign-pass": "node scripts/sign-pass.mjs"
+  },
+  "dependencies": { "ethers": "^6.13.4" }
+}

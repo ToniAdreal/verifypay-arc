@@ -1,0 +1,5 @@
+I ran my independent reference Foundry suite against your VerifyPayEscrow and it fails to compile: it deploys the contract as `new VerifyPayEscrow(IERC20(address(mockUsdc)))`, and deploy scripts pass the USDC address as a constructor argument (prompt 3 also says "constructor argument USDC = 0x3600..."). Please change the contract so that:
+1. USDC is not a hard-coded constant. Use `IERC20 public immutable usdc;` set by `constructor(IERC20 usdc_) EIP712("VerifyPay", "1")`, which reverts ZeroAddress if usdc_ is address(0). On Arc it will be deployed with 0x3600000000000000000000000000000000000000.
+2. createEscrow is also `nonReentrant` (defense in depth against a malicious/hooked token during transferFrom).
+3. Keep every other name, error, event, struct field name and view exactly as now.
+Then update your test suite for the new constructor (drop any vm.etch at 0x3600 if used; just pass the mock), add a test that the constructor rejects address(0), re-run all tests and show the full output.

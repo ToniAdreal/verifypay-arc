@@ -1,0 +1,38 @@
+Compiling 1 files with Solc 0.8.30
+Solc 0.8.30 finished in 950.77ms
+Compiler run successful!
+
+Ran 1 test for test/ArcFork.t.sol:ArcForkTest
+[SKIP] test_fork_fullFlowOnRealUsdc() (gas: 0)
+Suite result: ok. 0 passed; 0 failed; 1 skipped; finished in 386.20µs (92.20µs CPU time)
+
+Ran 26 tests for test/VerifyPayEscrow.t.sol:VerifyPayEscrowTest
+[PASS] testFuzz_createRelease_conservesFunds(uint96,bytes32,uint32) (runs: 512, μ: 389633, ~: 389922)
+[PASS] testFuzz_refundNeverBeforeDeadline(uint32,uint32) (runs: 512, μ: 287042, ~: 278582)
+[PASS] test_constructor_rejectsZeroToken() (gas: 3833)
+[PASS] test_create_pullsUsdcAndEmits() (gas: 299288)
+[PASS] test_create_revertsOnBadParams() (gas: 137690)
+[PASS] test_create_revertsWithoutAllowance() (gas: 268479)
+[PASS] test_doubleRefund_reverts() (gas: 324753)
+[PASS] test_doubleRelease_reverts() (gas: 394008)
+[PASS] test_passDigest_matchesManualEip712() (gas: 12326)
+[PASS] test_reentrancy_onRelease_blocked() (gas: 1695185)
+[PASS] test_refund_afterDeadline_returnsFunds() (gas: 324008)
+[PASS] test_refund_afterRelease_reverts() (gas: 386817)
+[PASS] test_refund_beforeOrAtDeadline_reverts() (gas: 312174)
+[PASS] test_refund_onlyPayer() (gas: 272717)
+[PASS] test_release_afterRefund_reverts() (gas: 338056)
+[PASS] test_release_garbageSignature_reverts() (gas: 278740)
+[PASS] test_release_happyPath_anyoneCanRelay() (gas: 401079)
+[PASS] test_release_payerOrPayeeSignatureIsNotEnough() (gas: 291122)
+[PASS] test_release_signatureForOtherDeliverable_reverts() (gas: 294833)
+[PASS] test_release_smartAccountVerifier_erc1271() (gas: 593167)
+[PASS] test_release_stillAllowedAfterDeadlineIfNotRefunded() (gas: 359976)
+[PASS] test_release_unknownEscrow_reverts() (gas: 48455)
+[PASS] test_release_wrongSigner_reverts() (gas: 302560)
+[PASS] test_replay_acrossChains_reverts() (gas: 295507)
+[PASS] test_replay_acrossContracts_reverts() (gas: 574669)
+[PASS] test_replay_sameSigOnOtherEscrow_reverts() (gas: 629254)
+Suite result: ok. 26 passed; 0 failed; 0 skipped; finished in 30.20ms (66.52ms CPU time)
+
+Ran 2 test suites in 31.45ms (30.58ms CPU time): 26 tests passed, 0 failed, 1 skipped (27 total tests)
