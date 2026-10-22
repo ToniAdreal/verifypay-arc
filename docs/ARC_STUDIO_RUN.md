@@ -1,6 +1,6 @@
 # How Arc Studio was used (run of 2026-10-21, PDT)
 
-- Arc Studio app: https://studio.arc.io/app/6185d069-8204-45b9-b8ac-ddb2cde7bd5b ("Solidity Escrow Verification Agent"), CLI session `verifypay`, thread 201d6ab3-d06a-4971-8db5-72841ff12b6b, account toniadreal11@gmail.com, arc-studio CLI 1.2.1.
+- Arc Studio app: https://studio.arc.io/app/6185d069-8204-45b9-b8ac-ddb2cde7bd5b ("Solidity Escrow Verification Agent"), CLI session `verifypay`, thread 201d6ab3-d06a-4971-8db5-72841ff12b6b, account [account email redacted], arc-studio CLI 1.2.1.
 - Every prompt, status and outcome: `arc-studio/SESSION_LOG.md`. Arc Studio's own end-of-turn summaries: `arc-studio/turn-summaries/*.final.txt`.
 - The Arc Studio workspace (contract, tests, React app, security review) is the root of this repo (`contracts/`, `src/`, `docs/security-review.md`).
 

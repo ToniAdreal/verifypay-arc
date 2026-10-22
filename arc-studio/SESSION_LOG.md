@@ -1,5 +1,5 @@
 # Arc Studio session log (VerifyPay)
-Session name: verifypay (arc-studio CLI v1.2.1, account toniadreal11@gmail.com)
+Session name: verifypay (arc-studio CLI v1.2.1, account [account email redacted])
 | # | Time (PDT) | Prompt file / text | Status | Notes |
 |---|---|---|---|---|
 | 01 | 2026-10-21 21:37 | `prompts/01-contract.txt` | completed | files: contracts/VerifyPayEscrow.sol; Arc Studio ran its own functional+security review and Slither (2 timestamp hits) thread 201d6ab3-d06a-4971-8db5-72841ff12b6b |
