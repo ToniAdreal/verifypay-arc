@@ -1,0 +1,28 @@
+Reading all affected files first. I have the full picture. The key architectural shift: introduce `selectedChainId` in App (never undefined, defaults to testnet), propagate it everywhere as a prop, remove all `useAccount().chainId` from read paths. Writing everything in one batch: Now update VerifierPanel — `selectedChainId` for reads, wallet required only for sign: Now update PayerPanel — add `selectedChainId` prop, use it for the balance read, show wallet gate instead of hiding: Now update ReleasePanel with `selectedChainId`: Now run lint/typecheck and forge tests in parallel: The linter bans `setState` inside `useEffect`. The right fix: derive `selectedChainId` from `walletChainId` during render rather than syncing in an effect. Use a "user's explicit selection" piece of state and resolve the effective chain from it plus the live wallet chain: Also remove the now-unused `useEffect` import: Zero errors. Check forge: **32/32 tests pass. Zero lint/typecheck errors. Contract unchanged.**
+
+Here's what changed and how:
+
+**Selected network state (App.tsx)**
+
+`selectedChainId` is now derived during render rather than held in an effect-synced state variable (the linter forbids `setState` in `useEffect`). Priority chain: connected wallet (if it's an Arc chain) → user's last click in the chain bar → URL `?net=` param → Arc Testnet. This means:
+- No wallet connected: `selectedChainId` comes from the URL param or defaults to Testnet.
+- Wallet connected on Arc: follows the wallet chain automatically.
+- User clicks Testnet/Mainnet toggle: calls `handleSelectChain`, which records the pick AND calls `switchChain` if a wallet is connected.
+
+**Read-only views (EscrowTable, VerifierPanel)**
+
+All `useReadContract` / `useReadContracts` calls now use `chainId: selectedChainId` instead of `chainId: walletChainId`. The `if (!chainId) return null` guard is gone — the table renders immediately with no wallet, querying the Arc public RPC directly.
+
+**Write panels (PayerPanel, VerifierPanel, ReleasePanel)**
+
+Each computes `onCorrectChain = isConnected && walletChainId === selectedChainId`. Instead of hiding the panel or disabling silently, they show one of:
+- "Connect a wallet to …" (with a `Wallet` icon) when disconnected.
+- "Switch your wallet to the selected network" (with an inline **Switch** button) when connected on the wrong chain.
+
+**EscrowTable: new columns**
+
+Added Payer and Deliverable hash columns. Deliverable hash shows `0xabcd…ef1234` for Released escrows and `—` for Open/Refunded (where it's the zero hash). Every address links to the explorer of `selectedChainId`. Table gets `min-w-[640px]` so it scrolls horizontally rather than wrapping on small screens.
+
+**Mainnet badge/banner**
+
+Now driven by `selectedChainId === 5042`, so it appears as soon as you click Mainnet in the toggle — no wallet needed.

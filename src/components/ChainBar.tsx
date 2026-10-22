@@ -1,28 +1,30 @@
 /**
- * Top chain-selector bar + wallet connect button.
- * Shows Arc Testnet / Arc Mainnet toggle and the ConnectKit button.
+ * Chain-selector bar + wallet connect button.
+ * Works whether or not a wallet is connected: selectedChainId drives the
+ * active highlight; clicking calls onSelectChain (which also calls switchChain
+ * when connected). The ConnectKit button appears to the right.
  */
 import React from 'react'
-import { useAccount, useSwitchChain } from 'wagmi'
 import { ConnectKitButton } from 'connectkit'
 import { arcTestnet, arcMainnet } from '../chains'
 
 const CHAINS = [arcTestnet, arcMainnet]
 
-export function ChainBar() {
-  const { chainId } = useAccount()
-  const { switchChain, isPending } = useSwitchChain()
+interface Props {
+  selectedChainId: number
+  onSelectChain: (id: number) => void
+}
 
+export function ChainBar({ selectedChainId, onSelectChain }: Props) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <div className="flex rounded-lg overflow-hidden border border-[var(--border)] bg-[var(--surface-muted)]">
         {CHAINS.map((c) => {
-          const active = chainId === c.id
+          const active = selectedChainId === c.id
           return (
             <button
               key={c.id}
-              onClick={() => !active && switchChain({ chainId: c.id })}
-              disabled={isPending}
+              onClick={() => !active && onSelectChain(c.id)}
               className={[
                 'px-3 py-1.5 text-xs font-medium transition-colors',
                 active
@@ -35,11 +37,6 @@ export function ChainBar() {
           )
         })}
       </div>
-
-      {chainId && !CHAINS.find((c) => c.id === chainId) && (
-        <span className="text-xs text-[var(--danger)]">Wrong network</span>
-      )}
-
       <ConnectKitButton />
     </div>
   )

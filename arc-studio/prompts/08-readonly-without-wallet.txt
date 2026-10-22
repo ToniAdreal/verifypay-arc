@@ -1,0 +1,7 @@
+Read-only viewing must work WITHOUT a connected wallet (for a demo video and for judges). Today every component takes chainId from useAccount(), which is undefined when no wallet is connected, so with ?net=arcMainnet&contract=0x3622FfDCFE88c542aB1203a00282e128159edDE7 the escrow table renders nothing and the mainnet badge/banner don't show.
+Please:
+1. Introduce a single "selected network" state in App (initialised from ?net=arcMainnet|arcTestnet, default Arc Testnet), switchable from the chain bar even when disconnected. When a wallet is connected, keep it in sync (selecting a network calls switchChain; if the wallet changes chain, follow it).
+2. Pass that selected chainId to every read (useReadContract/useReadContracts chainId param, explorer links, CHAIN_DEFAULTS, the MAINNET banner/badge) so the escrow table, nextEscrowId, passDigest preview and contract bar all load from the public Arc RPC with no wallet.
+3. Writes (approve, createEscrow, sign, release, refund) still require a connected wallet on the selected chain; show "Connect a wallet to …" instead of hiding panels.
+4. Escrow table: show id, payer, payee, verifier, amount (USDC 6 dec), deadline, status, and the deliverableHash for released escrows, each address linking to the explorer of the selected network.
+Do not change the contract. Run lint/typecheck and the contract tests and summarize.

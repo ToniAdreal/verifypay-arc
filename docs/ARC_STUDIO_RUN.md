@@ -5,7 +5,7 @@
 - The Arc Studio workspace (contract, tests, React app, security review) is the root of this repo (`contracts/`, `src/`, `docs/security-review.md`).
 
 ## Who wrote what
-- Contract `contracts/VerifyPayEscrow.sol`, its 32-test Foundry suite, the React/Vite frontend and `docs/security-review.md` were all generated and iterated **by Arc Studio** from prompts 01–07. No line was hand-edited.
+- Contract `contracts/VerifyPayEscrow.sol`, its 32-test Foundry suite, the React/Vite frontend and `docs/security-review.md` were all generated and iterated **by Arc Studio** from prompts 01–08. No line was hand-edited.
 - The earlier local reference/spec lives in `arc-studio/reference-yardstick/`. They were used only to check Arc Studio's output:
   - Our 26-test reference suite against Arc Studio's v01 contract: **did not compile** (hard-coded USDC constant, no constructor arg) → fed back as prompt 02b; Arc Studio switched to an immutable `usdc` ctor arg + `nonReentrant` create.
   - Against Arc Studio's final contract: 24/26 → the 2 fuzz tests failed only because Arc Studio's hardening (prompt 05) added a 60 s minimum deadline (`DeadlineTooSoon`). With the reference fuzz bounds raised to ≥60 s (crosscheck copy only): **26/26 pass**; `ArcFork` real-USDC fork test passes on testnet and mainnet forks. Logs in `arc-studio/test-logs/`.

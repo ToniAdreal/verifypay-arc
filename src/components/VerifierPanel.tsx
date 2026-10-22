@@ -1,15 +1,17 @@
 /**
  * Verifier panel: sign EIP-712 Pass over passDigest.
- * Accepts manual escrow id + deliverable hash OR a VerifyGate evidence JSON.
+ * passDigest preview reads from the chain with no wallet.
+ * Signing requires a connected wallet on the selected chain.
  */
 import React, { useState } from 'react'
 import { useAccount, useSignTypedData, useReadContract } from 'wagmi'
 import { isHex, keccak256, toHex } from 'viem'
-import { Copy, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Copy, AlertCircle, CheckCircle2, Wallet } from 'lucide-react'
 import { ESCROW_ABI } from '../escrow-abi'
 
 interface Props {
   contractAddress: string
+  selectedChainId: number
   prefillEscrowId?: bigint
 }
 
@@ -19,8 +21,9 @@ interface VerifyGateEvidence {
   [key: string]: unknown
 }
 
-export function VerifierPanel({ contractAddress, prefillEscrowId }: Props) {
-  const { chainId, isConnected } = useAccount()
+export function VerifierPanel({ contractAddress, selectedChainId, prefillEscrowId }: Props) {
+  const { isConnected, chainId: walletChainId } = useAccount()
+  const onCorrectChain = isConnected && walletChainId === selectedChainId
 
   const [escrowIdOverride, setEscrowIdOverride] = useState<string | undefined>()
   const [deliverableHash, setDeliverableHash] = useState('')
@@ -33,7 +36,7 @@ export function VerifierPanel({ contractAddress, prefillEscrowId }: Props) {
   const escrowId = escrowIdOverride ?? prefillEscrowId?.toString() ?? ''
   const setEscrowId = (v: string) => setEscrowIdOverride(v)
 
-  // ── Read passDigest from contract ─────────────────────────────────────────
+  // ── Read passDigest from contract (no wallet needed) ──────────────────────
   const safeEscrowId = escrowId.match(/^\d+$/) ? BigInt(escrowId) : undefined
   const safeHash = isHex(deliverableHash) && deliverableHash.length === 66
     ? (deliverableHash)
@@ -44,21 +47,21 @@ export function VerifierPanel({ contractAddress, prefillEscrowId }: Props) {
     abi: ESCROW_ABI,
     functionName: 'passDigest',
     args: safeEscrowId !== undefined && safeHash ? [safeEscrowId, safeHash] : undefined,
-    chainId: chainId as number,
+    chainId: selectedChainId,
     query: { enabled: !!safeEscrowId && !!safeHash && !!contractAddress },
   })
 
-  // ── Sign via eth_signTypedData_v4 (useSignTypedData) ──────────────────────
+  // ── Sign (wallet required) ────────────────────────────────────────────────
   const { signTypedDataAsync, isPending: signing } = useSignTypedData()
 
   async function handleSign() {
-    if (!isConnected || !safeEscrowId || !safeHash || !chainId) return
+    if (!onCorrectChain || !safeEscrowId || !safeHash) return
     try {
       const sig = await signTypedDataAsync({
         domain: {
           name: 'VerifyPay',
           version: '1',
-          chainId: BigInt(chainId),
+          chainId: BigInt(selectedChainId),
           verifyingContract: contractAddress as `0x${string}`,
         },
         types: {
@@ -160,6 +163,7 @@ export function VerifierPanel({ contractAddress, prefillEscrowId }: Props) {
         </label>
       </div>
 
+      {/* passDigest preview — shows with no wallet */}
       {digest && (
         <div className="rounded-lg bg-[var(--surface-muted)] p-2 text-[10px] text-[var(--muted)]">
           <span className="label text-[10px]">EIP-712 digest (passDigest)</span>
@@ -167,13 +171,26 @@ export function VerifierPanel({ contractAddress, prefillEscrowId }: Props) {
         </div>
       )}
 
-      <button
-        className="btn flex items-center gap-2 self-start"
-        onClick={() => { void handleSign() }}
-        disabled={signing || !safeEscrowId || !safeHash || !isConnected}
-      >
-        {signing ? 'Waiting for wallet…' : 'Sign PASS (eth_signTypedData_v4)'}
-      </button>
+      {/* Wallet gate for signing */}
+      {!isConnected ? (
+        <div className="flex items-center gap-2 text-xs text-[var(--muted)] rounded-lg bg-[var(--surface-muted)] px-3 py-2">
+          <Wallet size={13} />
+          Connect a wallet to sign PASS attestations
+        </div>
+      ) : !onCorrectChain ? (
+        <div className="flex items-center gap-2 text-xs text-[var(--danger)] rounded-lg bg-[var(--surface-muted)] px-3 py-2">
+          <AlertCircle size={13} />
+          Switch your wallet to the selected network to sign
+        </div>
+      ) : (
+        <button
+          className="btn flex items-center gap-2 self-start"
+          onClick={() => { void handleSign() }}
+          disabled={signing || !safeEscrowId || !safeHash}
+        >
+          {signing ? 'Waiting for wallet…' : 'Sign PASS (eth_signTypedData_v4)'}
+        </button>
+      )}
 
       {signature && (
         <div className="rounded-lg bg-[var(--surface-muted)] p-3 flex flex-col gap-2">

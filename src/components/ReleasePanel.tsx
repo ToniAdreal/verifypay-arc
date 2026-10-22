@@ -1,6 +1,7 @@
 /**
- * Release + Refund panel (callable by anyone / payer).
- * Performs a staticCall first and decodes custom errors before broadcasting.
+ * Release + Refund panel.
+ * Simulation (staticCall) and writes require a connected wallet on the selected chain.
+ * Shows "Connect a wallet to …" when disconnected instead of hiding.
  */
 import React, { useState } from 'react'
 import {
@@ -10,7 +11,7 @@ import {
   usePublicClient,
   useSwitchChain,
 } from 'wagmi'
-import { Loader2 as Spin, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Loader2 as Spin, CheckCircle2, AlertCircle, Wallet } from 'lucide-react'
 import { ESCROW_ABI } from '../escrow-abi'
 import { decodeEscrowError } from '../escrow-errors'
 import { useDynamicFees } from '../hooks/useDynamicFees'
@@ -18,16 +19,25 @@ import type { LogEntry } from '../types'
 
 interface Props {
   contractAddress: string
+  selectedChainId: number
   addLog: (entry: Omit<LogEntry, 'id' | 'ts'>) => void
   prefillEscrowId?: bigint
   prefillSig?: string
 }
 
-export function ReleasePanel({ contractAddress, addLog, prefillEscrowId, prefillSig }: Props) {
-  const { address, chainId, isConnected } = useAccount()
+export function ReleasePanel({
+  contractAddress,
+  selectedChainId,
+  addLog,
+  prefillEscrowId,
+  prefillSig,
+}: Props) {
+  const { address, chainId: walletChainId, isConnected } = useAccount()
   const { switchChain } = useSwitchChain()
   const publicClient = usePublicClient()
   const fees = useDynamicFees()
+
+  const onCorrectChain = isConnected && walletChainId === selectedChainId
 
   const [escrowIdOverride, setEscrowIdOverride] = useState<string | undefined>()
   const [deliverableHash, setDeliverableHash] = useState('')
@@ -35,11 +45,26 @@ export function ReleasePanel({ contractAddress, addLog, prefillEscrowId, prefill
   const [simResult, setSimResult] = useState<{ ok: boolean; msg: string } | null>(null)
   const [simulating, setSimulating] = useState(false)
 
-  // Derived: user edits win; fall back to prefill from parent
   const escrowId = escrowIdOverride ?? prefillEscrowId?.toString() ?? ''
   const setEscrowId = (v: string) => setEscrowIdOverride(v)
   const signature = signatureOverride ?? prefillSig ?? ''
   const setSignature = (v: string) => setSignatureOverride(v)
+
+  const safeId = escrowId.match(/^\d+$/) ? BigInt(escrowId) : undefined
+  const safeHash = (deliverableHash.startsWith('0x') && deliverableHash.length === 66)
+    ? (deliverableHash as `0x${string}`)
+    : undefined
+
+  // Exactly 65 bytes = 0x + 130 hex chars; reject high-s client-side.
+  const SECP256K1_HALF_N = BigInt('0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0')
+  const safeSig = (() => {
+    if (!signature.startsWith('0x') || signature.length !== 132) return undefined
+    const sHex = '0x' + signature.slice(66, 130)
+    try {
+      if (BigInt(sHex) > SECP256K1_HALF_N) return undefined
+    } catch { return undefined }
+    return signature as `0x${string}`
+  })()
 
   // ── staticCall simulation ─────────────────────────────────────────────────
   async function simulate() {
@@ -70,7 +95,7 @@ export function ReleasePanel({ contractAddress, addLog, prefillEscrowId, prefill
 
   React.useEffect(() => {
     if (releaseSuccess && relHash) {
-      addLog({ kind: 'success', label: `Released escrow #${escrowId}`, txHash: relHash, chainId: chainId! })
+      addLog({ kind: 'success', label: `Released escrow #${escrowId}`, txHash: relHash, chainId: selectedChainId })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [releaseSuccess])
@@ -83,36 +108,13 @@ export function ReleasePanel({ contractAddress, addLog, prefillEscrowId, prefill
 
   React.useEffect(() => {
     if (refundSuccess && refHash) {
-      addLog({ kind: 'success', label: `Refunded escrow #${escrowId}`, txHash: refHash, chainId: chainId! })
+      addLog({ kind: 'success', label: `Refunded escrow #${escrowId}`, txHash: refHash, chainId: selectedChainId })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refundSuccess])
 
-  const safeId = escrowId.match(/^\d+$/) ? BigInt(escrowId) : undefined
-  const safeHash = (deliverableHash.startsWith('0x') && deliverableHash.length === 66)
-    ? (deliverableHash as `0x${string}`)
-    : undefined
-  // Exactly 65 bytes = 0x + 130 hex chars.
-  // Reject high-s (s > n/2) before even submitting — mirrors the contract check.
-  const SECP256K1_HALF_N = BigInt('0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0')
-  const safeSig = (() => {
-    if (!signature.startsWith('0x') || signature.length !== 132) return undefined
-    // Extract s (bytes 32-64 of the 65-byte payload, i.e. hex chars 2+64 to 2+128).
-    const sHex = '0x' + signature.slice(66, 130)
-    try {
-      if (BigInt(sHex) > SECP256K1_HALF_N) return undefined
-    } catch { return undefined }
-    return signature as `0x${string}`
-  })()
-
-  const arcId = (chainId === 5042002 || chainId === 5042) ? chainId : 5042002
-
   function handleRelease() {
-    if (!isConnected || !safeId || !safeHash || !safeSig) return
-    if (chainId !== 5042002 && chainId !== 5042) {
-      switchChain({ chainId: 5042002 as const })
-      return
-    }
+    if (!onCorrectChain || !safeId || !safeHash || !safeSig) return
     doRelease({
       address: contractAddress as `0x${string}`,
       abi: ESCROW_ABI,
@@ -120,16 +122,12 @@ export function ReleasePanel({ contractAddress, addLog, prefillEscrowId, prefill
       args: [safeId, safeHash, safeSig],
       maxFeePerGas: fees.maxFeePerGas,
       maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
-      chainId: arcId,
+      chainId: selectedChainId,
     })
   }
 
   function handleRefund() {
-    if (!isConnected || !safeId) return
-    if (chainId !== 5042002 && chainId !== 5042) {
-      switchChain({ chainId: 5042002 as const })
-      return
-    }
+    if (!onCorrectChain || !safeId) return
     doRefund({
       address: contractAddress as `0x${string}`,
       abi: ESCROW_ABI,
@@ -137,7 +135,7 @@ export function ReleasePanel({ contractAddress, addLog, prefillEscrowId, prefill
       args: [safeId],
       maxFeePerGas: fees.maxFeePerGas,
       maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
-      chainId: arcId,
+      chainId: selectedChainId,
     })
   }
 
@@ -182,12 +180,12 @@ export function ReleasePanel({ contractAddress, addLog, prefillEscrowId, prefill
         </label>
       </div>
 
-      {/* Simulation */}
+      {/* Simulation — available when inputs are valid (wallet optional) */}
       <div className="flex gap-2 flex-wrap items-center">
         <button
           className="btn-ghost text-xs px-3 py-2 flex items-center gap-1.5"
           onClick={() => { void simulate() }}
-          disabled={simulating || !safeId || !safeHash || !safeSig}
+          disabled={simulating || !safeId || !safeHash || !safeSig || !publicClient}
         >
           {simulating && <Spin size={12} className="animate-spin" />}
           Simulate (staticCall)
@@ -200,27 +198,45 @@ export function ReleasePanel({ contractAddress, addLog, prefillEscrowId, prefill
         )}
       </div>
 
-      {/* Action buttons */}
-      <div className="flex gap-2 flex-wrap">
-        <button
-          className="btn flex items-center gap-2"
-          onClick={handleRelease}
-          disabled={releasing || releaseConfirming || !safeId || !safeHash || !safeSig || !isConnected}
-        >
-          {(releasing || releaseConfirming) && <Spin size={13} className="animate-spin" />}
-          {releaseSuccess && <CheckCircle2 size={13} />}
-          Release
-        </button>
-        <button
-          className="btn-ghost flex items-center gap-2 text-[var(--danger)] border-[var(--danger)]/30 hover:bg-[var(--danger)]/10"
-          onClick={handleRefund}
-          disabled={refunding || refundConfirming || !safeId || !isConnected}
-        >
-          {(refunding || refundConfirming) && <Spin size={13} className="animate-spin" />}
-          {refundSuccess && <CheckCircle2 size={13} />}
-          Refund (payer only)
-        </button>
-      </div>
+      {/* Wallet gate */}
+      {!isConnected ? (
+        <div className="flex items-center gap-2 text-xs text-[var(--muted)] rounded-lg bg-[var(--surface-muted)] px-3 py-2">
+          <Wallet size={13} />
+          Connect a wallet to release or refund escrows
+        </div>
+      ) : !onCorrectChain ? (
+        <div className="flex items-center gap-2 text-xs text-[var(--danger)] rounded-lg bg-[var(--surface-muted)] px-3 py-2">
+          <AlertCircle size={13} />
+          Switch your wallet to the selected network
+          <button
+            className="ml-auto btn-ghost text-[11px] px-2 py-1"
+            onClick={() => switchChain({ chainId: selectedChainId })}
+          >
+            Switch
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2 flex-wrap">
+          <button
+            className="btn flex items-center gap-2"
+            onClick={handleRelease}
+            disabled={releasing || releaseConfirming || !safeId || !safeHash || !safeSig}
+          >
+            {(releasing || releaseConfirming) && <Spin size={13} className="animate-spin" />}
+            {releaseSuccess && <CheckCircle2 size={13} />}
+            Release
+          </button>
+          <button
+            className="btn-ghost flex items-center gap-2 text-[var(--danger)] border-[var(--danger)]/30 hover:bg-[var(--danger)]/10"
+            onClick={handleRefund}
+            disabled={refunding || refundConfirming || !safeId}
+          >
+            {(refunding || refundConfirming) && <Spin size={13} className="animate-spin" />}
+            {refundSuccess && <CheckCircle2 size={13} />}
+            Refund (payer only)
+          </button>
+        </div>
+      )}
 
       {(releasing || releaseConfirming) && (
         <p className="status-info">{releasing ? 'Waiting for wallet…' : 'Confirming release…'}</p>
@@ -229,7 +245,7 @@ export function ReleasePanel({ contractAddress, addLog, prefillEscrowId, prefill
         <p className="status-info">{refunding ? 'Waiting for wallet…' : 'Confirming refund…'}</p>
       )}
       {releaseErr && <p className="status-error">{decodeEscrowError(releaseErr)}</p>}
-      {refundErr && <p className="status-error">{decodeEscrowError(refundErr)}</p>}
+      {refundErr  && <p className="status-error">{decodeEscrowError(refundErr)}</p>}
     </div>
   )
 }

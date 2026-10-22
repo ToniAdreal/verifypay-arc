@@ -1,10 +1,8 @@
 /**
  * Contract address field with per-chain defaults.
- * The input shows the parent's effective address by default; an explicit
- * user edit takes over until the reset button is pressed.
+ * Uses selectedChainId (never undefined) so reads work without a wallet.
  */
 import { useState } from 'react'
-import { useWaitForTransactionReceipt } from 'wagmi'
 import { ExternalLink, RefreshCw } from 'lucide-react'
 import { isAddress } from 'viem'
 import { explorerAddr } from '../chains'
@@ -12,33 +10,32 @@ import { CHAIN_DEFAULTS } from '../App'
 
 interface Props {
   contractAddress: string
-  chainId: number | undefined
+  selectedChainId: number
   onAddressChange: (addr: `0x${string}`) => void
 }
 
-export function ContractBar({ contractAddress, chainId, onAddressChange }: Props) {
-  // When the user has not typed anything, mirror the parent's effective address.
-  // When they start typing, their input takes over until they reset.
+export function ContractBar({ contractAddress, selectedChainId, onAddressChange }: Props) {
+  // null = mirror parent; non-null = user is typing
   const [draft, setDraft] = useState<string | null>(null)
   const displayed = draft ?? contractAddress
 
-  // Placeholder — browser deploy requires bundled bytecode
-  const deployHash = undefined as `0x${string}` | undefined
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash: deployHash })
-
   const addrValid = isAddress(displayed)
-  const explorerUrl = addrValid && chainId ? explorerAddr(chainId, displayed) : undefined
+  const explorerUrl = addrValid ? explorerAddr(selectedChainId, displayed) : undefined
 
-  const defaultAddr = CHAIN_DEFAULTS[chainId ?? 5042002] ?? CHAIN_DEFAULTS[5042002]
-  const chainLabel = chainId === 5042 ? 'Mainnet default' : 'Testnet default'
+  const defaultAddr = CHAIN_DEFAULTS[selectedChainId] ?? CHAIN_DEFAULTS[5042002]
+  const chainLabel = selectedChainId === 5042 ? 'Mainnet default' : 'Testnet default'
 
   return (
     <div className="card flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <span className="label">Contract</span>
         {explorerUrl && (
-          <a href={explorerUrl} target="_blank" rel="noopener"
-             className="text-[var(--muted)] hover:text-[var(--ink)] ml-auto">
+          <a
+            href={explorerUrl}
+            target="_blank"
+            rel="noopener"
+            className="text-[var(--muted)] hover:text-[var(--ink)] ml-auto"
+          >
             <ExternalLink size={13} />
           </a>
         )}
@@ -87,8 +84,6 @@ bun run deploy:self VerifyPayEscrow \\
           </pre>
         </div>
       </details>
-
-      {isConfirming && <p className="text-xs text-[var(--muted)]">Deploying…</p>}
     </div>
   )
 }
