@@ -2,6 +2,8 @@
 
 **Built in [Arc Studio](https://studio.arc.io).** The contract, its tests and the web app in this repo were generated and iterated by Arc Studio from the prompts in [`arc-studio/prompts/`](arc-studio/prompts/); see [docs/ARC_STUDIO_RUN.md](docs/ARC_STUDIO_RUN.md) for exactly how.
 
+**Live app (Arc mainnet, read-only without a wallet):** <https://toniadreal.github.io/verifypay-arc/?net=arcMainnet&contract=0x3622FfDCFE88c542aB1203a00282e128159edDE7>
+
 VerifyPay is a USDC escrow on [Arc](https://docs.arc.io). A payer locks USDC for an AI coding agent. The money moves only when a
 **designated verifier signs an EIP-712 `PASS`** over `(escrowId, deliverableHash)`. If no PASS arrives before the deadline, the payer refunds.
 Anyone can relay the PASS (the agent itself, the payer, or a bot), so nobody has to click "pay".
@@ -74,6 +76,15 @@ node scripts/demo.mjs   --network testnet --refund-ttl 70 --sweep-back
 ```
 The app connects any injected EIP-1193 wallet, switches/adds Arc, and has payer, verifier (paste a VerifyGate evidence JSON, sign with
 `eth_signTypedData_v4`) and release/refund panels, plus an escrow table. Fees use `max(2·baseFee, 20 gwei) + 1 gwei` (Arc's mempool floor is 20 gwei).
+
+## Hosting (GitHub Pages)
+The live app is Arc Studio's app, unchanged, built with Vite's base path set on the command line and published to the `gh-pages` branch:
+```bash
+bunx vite build --base=/verifypay-arc/    # no source or config edits
+# publish dist/ (plus an empty .nojekyll) to the gh-pages branch
+```
+With no URL parameters the app opens on Arc testnet (Arc Studio's default), so the live link passes `?net=arcMainnet&contract=0x3622…dDE7`.
+The build contains no keys or API tokens (gitleaks scan of `dist/`: no leaks). It reads chain data straight from the public Arc RPC (`https://rpc.mainnet.arc.io`, which allows CORS from `toniadreal.github.io`).
 
 ## How it was built
 See [docs/ARC_STUDIO_RUN.md](docs/ARC_STUDIO_RUN.md) and the prompt-by-prompt log [arc-studio/SESSION_LOG.md](arc-studio/SESSION_LOG.md).
